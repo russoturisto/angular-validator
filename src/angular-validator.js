@@ -199,7 +199,7 @@ angular.module('angularValidator').directive('angularValidator',
                         // If add-message-to-id is defined, use the element with this id to add error message to.
                         var elementToAddTo = angular.element(document.getElementById(element.attributes['add-message-to-id'].value));
                         // Add the error message to
-                        elementToAddAfter.append(message);
+                        elementToAddTo.append(message);
                     }
                     else {
                         // Add the error message after
