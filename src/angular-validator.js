@@ -171,26 +171,39 @@ angular.module('angularValidator').directive('angularValidator',
 
 
                     // Only add validation messages if the form field is $dirty or the form has been submitted
-                    if (scopeElementModel.$dirty || scope[element.form.name].submitted) {
+                    if (scopeElementModel.$dirty || (scope[element.form.name] && scope[element.form.name].submitted)) {
                         if (scopeElementModel.$error.required) {
                             // If there is a custom required message display it
                             if ("required-message" in element.attributes) {
-                                addErrorMessageAfter(element, generateErrorMessage(element.attributes['required-message'].value));
+                                addErrorMessage(element, generateErrorMessage(element.attributes['required-message'].value));
                             }
                             // Display the default required message
                             else {
-                                addErrorMessageAfter(element, generateErrorMessage(defaultRequiredMessage));
+                                addErrorMessage(element, generateErrorMessage(defaultRequiredMessage));
                             }
                         } else if (!scopeElementModel.$valid) {
                             // If there is a custom validation message add it
                             if ("invalid-message" in element.attributes) {
-                                addErrorMessageAfter(element, generateErrorMessage(element.attributes['invalid-message'].value));
+                                addErrorMessage(element, generateErrorMessage(element.attributes['invalid-message'].value));
                             }
                             // Display the default error message
                             else {
-                                addErrorMessageAfter(element, generateErrorMessage(defaultInvalidMessage));
+                                addErrorMessage(element, generateErrorMessage(defaultInvalidMessage));
                             }
                         }
+                    }
+                }
+                
+                function addErrorMessage(element, message) {
+                    if ("add-message-to-id" in element.attributes) {
+                        // If add-message-to-id is defined, use the element with this id to add error message to.
+                        var elementToAddTo = angular.element(document.getElementById(element.attributes['add-message-to-id'].value));
+                        // Add the error message to
+                        elementToAddAfter.append(message);
+                    }
+                    else {
+                        // Add the error message after
+                        addErrorMessageAfter(element, message);
                     }
                 }
 
@@ -219,7 +232,10 @@ angular.module('angularValidator').directive('angularValidator',
                 // Returns the validation message element or False
                 function isValidationMessagePresent(element) {
                     var elementSiblings;
-                    if ("add-message-after-id" in element.attributes) {
+                    if ("add-message-to-id" in element.attributes) {
+                        elementSiblings = angular.element(document.getElementById(element.attributes['add-message-to-id'].value)).children();
+                    }
+                    else if ("add-message-after-id" in element.attributes) {
                         elementSiblings = angular.element(document.getElementById(element.attributes['add-message-after-id'].value)).parent().children();
                     }
                     else {
