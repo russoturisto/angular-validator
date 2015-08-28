@@ -76,7 +76,8 @@ angular.module('angularValidator').directive('angularValidator',
                 // Setup $watch on a single formfield
                 function setupWatch(elementToWatch) {
                     // If element is set to validate on blur then update the element on blur
-                    if ("validate-on" in elementToWatch.attributes && elementToWatch.attributes["validate-on"].value === "blur") {
+                    if ("validate-on" in elementToWatch.attributes
+                        && ["blur", "visit"].indexOf(elementToWatch.attributes["validate-on"].value) > -1) {
                         angular.element(elementToWatch).on('blur', function() {
                             updateValidationMessage(elementToWatch);
                             updateValidationClass(elementToWatch);
@@ -96,7 +97,15 @@ angular.module('angularValidator').directive('angularValidator',
                                 // Determine if the element in question is to be updated on blur
                                 var isDirtyElement = "validate-on" in elementToWatch.attributes && elementToWatch.attributes["validate-on"].value === "dirty";
 
+                                // Determine if the element in question is to be updated on being touched
+                                var isTouchedElement = "validate-on" in elementToWatch.attributes && elementToWatch.attributes["validate-on"].value === "visit";
+
                                 if (isDirtyElement){
+                                    updateValidationMessage(elementToWatch);
+                                    updateValidationClass(elementToWatch);
+                                }
+                                // Only check element on dirty if it's been touched
+                                else if (isTouchedElement && scopeForm[elementToWatch.name].$touched) {
                                     updateValidationMessage(elementToWatch);
                                     updateValidationClass(elementToWatch);
                                 }
