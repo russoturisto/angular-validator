@@ -4,7 +4,8 @@ angular.module('angularValidator').directive('angularValidator',
     function() {
         return {
             restrict: 'A',
-            link: function(scope, element, attrs, fn) {
+            link: function(scope, element,
+                           attrs, fn) {
 
                 // This is the DOM form element
                 var DOMForm = angular.element(element)[0];
@@ -76,7 +77,8 @@ angular.module('angularValidator').directive('angularValidator',
                 // Setup $watch on a single formfield
                 function setupWatch(elementToWatch) {
                     // If element is set to validate on blur then update the element on blur
-                    if ("validate-on" in elementToWatch.attributes && elementToWatch.attributes["validate-on"].value === "blur") {
+                    if ("validate-on" in elementToWatch.attributes 
+                        && ["blur", "visit"].indexOf(elementToWatch.attributes["validate-on"].value) > -1) {
                         angular.element(elementToWatch).on('blur', function() {
                             updateValidationMessage(elementToWatch);
                             updateValidationClass(elementToWatch);
@@ -96,7 +98,15 @@ angular.module('angularValidator').directive('angularValidator',
                                 // Determine if the element in question is to be updated on blur
                                 var isDirtyElement = "validate-on" in elementToWatch.attributes && elementToWatch.attributes["validate-on"].value === "dirty";
 
+                                // Determine if the element in question is to be updated on being touched
+                                var isTouchedElement = "validate-on" in elementToWatch.attributes && elementToWatch.attributes["validate-on"].value === "visit";
+
                                 if (isDirtyElement){
+                                    updateValidationMessage(elementToWatch);
+                                    updateValidationClass(elementToWatch);
+                                }
+                                // Only check element on dirty if it's been touched
+                                else if (isTouchedElement && scopeForm[elementToWatch.name].$touched) {
                                     updateValidationMessage(elementToWatch);
                                     updateValidationClass(elementToWatch);
                                 }
@@ -176,23 +186,52 @@ angular.module('angularValidator').directive('angularValidator',
                         if (scopeElementModel.$error.required) {
                             // If there is a custom required message display it
                             if ("required-message" in element.attributes) {
-                                angular.element(element).after(generateErrorMessage(element.attributes['required-message'].value));
+                                addErrorMessage(element, generateErrorMessage(element.attributes['required-message'].value));
                             }
                             // Display the default required message
                             else {
-                                angular.element(element).after(generateErrorMessage(defaultRequiredMessage));
+                                addErrorMessage(element, generateErrorMessage(defaultRequiredMessage));
                             }
                         } else if (!scopeElementModel.$valid) {
                             // If there is a custom validation message add it
                             if ("invalid-message" in element.attributes) {
-                                angular.element(element).after(generateErrorMessage(element.attributes['invalid-message'].value));
+                                addErrorMessage(element, generateErrorMessage(element.attributes['invalid-message'].value));
                             }
                             // Display the default error message
                             else {
-                                angular.element(element).after(generateErrorMessage(defaultInvalidMessage));
+                                addErrorMessage(element, generateErrorMessage(defaultInvalidMessage));
                             }
                         }
                     }
+                }
+
+                function addErrorMessage(element, message) {
+                    if ("add-message-to-id" in element.attributes) {
+                        // If add-message-to-id is defined, use the element with this id to add error message to.
+                        var elementToAddTo = angular.element(document.getElementById(element.attributes['add-message-to-id'].value));
+                        // Add the error message to
+                        elementToAddTo.append(message);
+                    }
+                    else {
+                        // Add the error message after
+                        addErrorMessageAfter(element, message);
+                    }
+                }
+
+                // Adds the error message after the element or a specified element by using the value of the add-message-after-id attribute.
+                function addErrorMessageAfter(element, message)
+                {
+                    var elementToAddAfter;
+                    if ("add-message-after-id" in element.attributes) {
+                        // If add-message-after-id is defined, use the element with this id to add error message after.
+                        elementToAddAfter = angular.element(document.getElementById(element.attributes['add-message-after-id'].value))
+                    }
+                    else {
+                        // Use default element
+                        elementToAddAfter = angular.element(element);
+                    }
+                    // Add the error message after
+                    elementToAddAfter.after(message);
                 }
 
 
@@ -203,7 +242,16 @@ angular.module('angularValidator').directive('angularValidator',
 
                 // Returns the validation message element or False
                 function isValidationMessagePresent(element) {
-                    var elementSiblings = angular.element(element).parent().children();
+                    var elementSiblings;
+                    if ("add-message-to-id" in element.attributes) {
+                        elementSiblings = angular.element(document.getElementById(element.attributes['add-message-to-id'].value)).children();
+                    }
+                    else if ("add-message-after-id" in element.attributes) {
+                        elementSiblings = angular.element(document.getElementById(element.attributes['add-message-after-id'].value)).parent().children();
+                    }
+                    else {
+                        elementSiblings = angular.element(element).parent().children();
+                    }
                     for (var i = 0; i < elementSiblings.length; i++) {
                         if (angular.element(elementSiblings[i]).hasClass("validationMessage")) {
                             return angular.element(elementSiblings[i]);
